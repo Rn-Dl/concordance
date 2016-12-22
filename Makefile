@@ -1,8 +1,12 @@
 HEADERS = hashT.h
 CC = gcc
+CCP = g++
 CFLAGS = -c -Wall
 
 all: concordance
+
+cplus: concordance.cpp
+	$(CCP) -g -Wall -o concordance concordance.cpp
 
 concordance: concordance.o hashT.o
 	$(CC) -o concordance concordance.o hashT.o

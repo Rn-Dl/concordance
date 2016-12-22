@@ -1,5 +1,13 @@
 // Place your settings in this file to overwrite default and user settings.
 {
+    "python.pythonPath":"${env.HOME}/Envs/HomeWorks/bin/python",
+    "editor.insertSpaces": false,
+    "python.linting.enabled": true,
+    "python.linting.lintOnSave": true,
+    "python.linting.lintOnTextChange": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.pep8Enabled": true,
+    "python.formatting.provider": "autopep8",
     "C_Cpp.clang_format_formatOnSave": true,
     "C_Cpp.clang_format_sortIncludes": null,
     "editor.formatOnType": true
