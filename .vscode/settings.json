@@ -10,5 +10,17 @@
     "python.formatting.provider": "autopep8",
     "C_Cpp.clang_format_formatOnSave": true,
     "C_Cpp.clang_format_sortIncludes": null,
-    "editor.formatOnType": true
+	"editor.formatOnType": true,
+	"files.associations": {
+		"utility": "cpp",
+		"initializer_list": "cpp",
+		"*harray": "cpp",
+		"array": "cpp",
+		"*h*hutility": "cpp",
+		"type_traits": "cpp",
+		"*h*h*hfunctional": "cpp",
+		"functional": "cpp",
+		"tuple": "cpp",
+		"system_error": "cpp"
+	}
 }

@@ -8,10 +8,11 @@
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
 #include "hashT.h"
 
 /* return string (char pointer) from file (file pointer) */
-char *getWord(FILE *fp);
+char *getWord(FILE *fp, unsigned int *curLine);
 
 /* output of result to screen */
 void printArray(tuple **array, const unsigned int size);
@@ -30,6 +31,7 @@ int main(int argc, char *argv[])
     FILE *fp = fopen(fn, "r");
 
     HashT words = HashTCreate();
+    unsigned int curLine = 1;
 
     if (!fp)
     {
@@ -38,14 +40,15 @@ int main(int argc, char *argv[])
     }
 
     char *word;
-    while ((word = getWord(fp)))
+    while ((word = getWord(fp, &curLine)))
     {
-        HashTIncValue(words, word);
+        HashTAddLocation(words, word, curLine);
+        //HashTIncValue(words, word);
     }
     fclose(fp);
 
     tuple *t;
-    const unsigned int n = HashTToArray(words, &t);
+    const unsigned int n = HashTToArray(words, &t, false);
     sortArray(&t, n);
     printArray(&t, n);
 
@@ -65,13 +68,14 @@ int main(int argc, char *argv[])
 
 /* ---------- */
 
-char *getWord(FILE *fp)
+char *getWord(FILE *fp, unsigned int *curLine)
 {
     char buf[100];
     unsigned int ch, i = 0;
 
     while (EOF != (ch = fgetc(fp)) && !isalpha(ch))
-        ;
+        if (ch == '\n')
+            ++*curLine;
     if (ch == EOF)
         return NULL;
 
@@ -90,7 +94,11 @@ void printArray(tuple **array, const unsigned int size)
 {
     for (unsigned int i = 0; i < size; i++)
     {
-        printf("%s  %u\n", (*array)[i].str, (*array)[i].num);
+        //printf("%s  %u\n", (*array)[i].str, (*array)[i].num);
+        printf("%s ", (*array)[i].str);
+        for (unsigned int j = 0; j < (*array)[i].locs.used; j++)
+            printf("%u ", (*array)[i].locs.array[j]);
+        printf("\n");
     }
 }
 
