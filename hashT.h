@@ -29,24 +29,21 @@ HashT HashTCreate(void);
 /* destroy a hash table */
 void HashTDestroy(HashT);
 
-/* add a new key-value pair into an existing hashTable */
-void HashTAddInt(HashT, const char *key, const unsigned int value);
+/* add a new data associated with a key into an existing hashTable */
+void HashTAddData(HashT, const char *key, const unsigned int value, const unsigned int curLoc, const unsigned mode);
 
-/*  */
-void HashTCopyArray(HashT hT, const char *key, const Array *arr);
+/* Copy dynamic array to array associated with a key */
+void HashTCopyArray(HashT, const char *key, const Array *arr);
 
 /* return the most recently added value associated with a key
     or 0 if no matching key is present */
 const unsigned int HashTSearch(HashT, const char *key);
 
-/* increment value associated with a key */
-void HashTIncValue(HashT, const char *key);
-
-/*  */
-void HashTAddLocation(HashT, const char *key, const unsigned int curLoc);
+/* increment value and insert new value in dynamic array associated with a key */
+void HashTOperation(HashT, const char *key, const unsigned int curLoc, const unsigned mode);
 
 /* convert hash table to array of tuples */
-unsigned int HashTToArray(HashT hT, tuple **array, const bool mode);
+unsigned int HashTToArray(HashT, tuple **array, const unsigned mode);
 
 /* destroy array of tuples */
 void ArrayDestroy(tuple **array, const unsigned int size);

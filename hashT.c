@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
-#include <stdbool.h>
 #include "hashT.h"
 
 struct element
@@ -22,7 +21,7 @@ struct hashTable
     struct element **table;
 };
 
-/* */
+/* Initialization of dynamic array */
 void initArray(Array *arr, size_t initialSize)
 {
     arr->array = (unsigned int *)malloc(initialSize * sizeof(unsigned int));
@@ -30,7 +29,7 @@ void initArray(Array *arr, size_t initialSize)
     arr->size = initialSize;
 }
 
-/* */
+/* Add a new integer into an existing dynamic array */
 void insertArray(Array *arr, const unsigned int element)
 {
     if (arr->used == arr->size)
@@ -41,7 +40,6 @@ void insertArray(Array *arr, const unsigned int element)
     arr->array[arr->used++] = element;
 }
 
-/* */
 void freeArray(Array *arr)
 {
     free(arr->array);
@@ -119,7 +117,7 @@ static unsigned long hash_function(const char *s)
 }
 
 /* increase hash table in GROWTH_FACTOR times */
-static void grow(HashT hT, const bool mode)
+static void grow(HashT hT, const unsigned mode)
 {
     HashT d2;              //new hashTable
     struct hashTable swap; //temporary structure
@@ -132,9 +130,9 @@ static void grow(HashT hT, const bool mode)
     {
         for (e = hT->table[i]; e != 0; e = e->next)
         {
-            if (mode)
-                HashTAddInt(d2, e->key, e->value);
-            else
+            if (mode == 1 || mode == 2)
+                HashTAddData(d2, e->key, e->value, 0, 1);
+            if (mode == 0 || mode == 2)
                 HashTCopyArray(d2, e->key, &e->locs);
         }
     }
@@ -146,8 +144,8 @@ static void grow(HashT hT, const bool mode)
     HashTDestroy(d2);
 }
 
-/* add a new key-value pair into an existing hashTable */
-void HashTAddInt(HashT hT, const char *key, const unsigned int value)
+/* add a new data associated with a key into an existing hashTable */
+void HashTAddData(HashT hT, const char *key, const unsigned int value, const unsigned int curLoc, const unsigned mode)
 {
     struct element *e;
     unsigned long h;
@@ -159,7 +157,12 @@ void HashTAddInt(HashT hT, const char *key, const unsigned int value)
     assert(e);
 
     e->key = strdup(key);
-    e->value = value;
+    e->value = (mode == 1 || mode == 2) ? value : 0;
+    if (mode == 0 || mode == 2)
+    {
+        initArray(&e->locs, 5);
+        insertArray(&e->locs, curLoc);
+    }
 
     h = hash_function(key) % hT->size;
 
@@ -171,42 +174,11 @@ void HashTAddInt(HashT hT, const char *key, const unsigned int value)
     // grow table if there is not enough space
     if (hT->n >= hT->size * MAX_LOAD_FACTOR)
     {
-        grow(hT, true);
+        grow(hT, mode);
     }
 }
 
-/* add a new key-value pair into an existing hashTable */
-void HashTAddArray(HashT hT, const char *key, const unsigned int curLoc)
-{
-    struct element *e;
-    unsigned long h;
-
-    assert(key);
-
-    e = malloc(sizeof(*e));
-
-    assert(e);
-
-    e->key = strdup(key);
-    e->value = 0;
-    initArray(&e->locs, 5);
-    insertArray(&e->locs, curLoc);
-
-    h = hash_function(key) % hT->size;
-
-    e->next = hT->table[h];
-    hT->table[h] = e;
-
-    hT->n++;
-
-    // grow table if there is not enough space
-    if (hT->n >= hT->size * MAX_LOAD_FACTOR)
-    {
-        grow(hT, false);
-    }
-}
-
-/* add a new key-value pair into an existing hashTable */
+/* Copy dynamic array to array associated with a key */
 void HashTCopyArray(HashT hT, const char *key, const Array *arr)
 {
     struct element *e;
@@ -249,8 +221,8 @@ const unsigned int HashTSearch(HashT hT, const char *key)
     return 0;
 }
 
-/* increment value associated with a key */
-void HashTIncValue(HashT hT, const char *key)
+/* increment value and insert new value in dynamic array associated with a key */
+void HashTOperation(HashT hT, const char *key, const unsigned int curLoc, const unsigned mode)
 {
     struct element *e;
 
@@ -259,32 +231,18 @@ void HashTIncValue(HashT hT, const char *key)
         if (!strcmp(e->key, key))
         {
             // increment it
-            e->value++;
+            if (mode == 1 || mode == 2)
+                e->value++;
+            if (mode == 0 || mode == 2)
+                insertArray(&e->locs, curLoc);
             return;
         }
     }
-    HashTAddInt(hT, key, 1);
-}
-
-/* */
-void HashTAddLocation(HashT hT, const char *key, const unsigned int curLoc)
-{
-    struct element *e;
-
-    for (e = hT->table[hash_function(key) % hT->size]; e != 0; e = e->next)
-    {
-        if (!strcmp(e->key, key))
-        {
-            //
-            insertArray(&e->locs, curLoc);
-            return;
-        }
-    }
-    HashTAddArray(hT, key, curLoc);
+    HashTAddData(hT, key, 1, curLoc, mode);
 }
 
 /* convert hash table to array of tuples */
-unsigned int HashTToArray(HashT hT, tuple **array, const bool mode)
+unsigned int HashTToArray(HashT hT, tuple **array, const unsigned mode)
 {
     struct element *e;
     unsigned int counter = 0;
@@ -295,13 +253,16 @@ unsigned int HashTToArray(HashT hT, tuple **array, const bool mode)
             for (e = hT->table[i]; e != 0 && counter != hT->n; e = e->next)
             {
                 (*array)[counter].str = strdup(e->key);
-                if (mode)
+                if (mode == 1 || mode == 2)
                     (*array)[counter].num = e->value;
                 else
                     (*array)[counter].num = 0;
-                initArray(&(*array)[counter].locs, e->locs.size);
-                (*array)[counter].locs.used = e->locs.used;
-                memcpy((*array)[counter].locs.array, e->locs.array, e->locs.size * sizeof *(*array)[counter].locs.array);
+                if (mode == 0 || mode == 2)
+                {
+                    initArray(&(*array)[counter].locs, e->locs.size);
+                    (*array)[counter].locs.used = e->locs.used;
+                    memcpy((*array)[counter].locs.array, e->locs.array, e->locs.size * sizeof *(*array)[counter].locs.array);
+                }
                 counter++;
             }
     return counter;

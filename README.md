@@ -1,6 +1,6 @@
 # Concordance
 
-Write a C program that takes as input (via a command line argument) a sufficiently large text document (several are available online for testing; e.g. via Project Gutenberg), and produces as output (via stdout) an alphabetically-ordered listing of each unique word in the document (case insensitive and space separated, though be careful to consider hyphenated words), along with the lines from the input document that the word appears on. Each unique word (and the list of lines that it appears on) should be on a separate line in the output.
+**Task**: Write a C program that takes as input (via a command line argument) a sufficiently large text document (several are available online for testing; e.g. via Project Gutenberg), and produces as output (via stdout) an alphabetically-ordered listing of each unique word in the document (case insensitive and space separated, though be careful to consider hyphenated words), along with the lines from the input document that the word appears on. Each unique word (and the list of lines that it appears on) should be on a separate line in the output.
 
 For example, taking the following text as input, in a file named "input.txt" in the current directory:
 
