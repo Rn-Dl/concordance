@@ -6,7 +6,7 @@ CFLAGS = -c -Wall
 all: concordance
 
 cplus: concordance.cpp
-	$(CCP) -g -Wall -o concordance concordance.cpp
+	$(CCP) -o concordance concordance.cpp
 
 concordance: concordance.o hashT.o
 	$(CC) -o concordance concordance.o hashT.o
@@ -18,4 +18,4 @@ hashT.o: hashT.c $(HEADERS)
 	$(CC) $(CFLAGS) hashT.c
 
 clean:
-	rm *.o concordance
+	rm *.o concordance *.out

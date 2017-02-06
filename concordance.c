@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     clock_t begin = clock();
 
     const char *fn = (optind < argc) ? argv[optind] : "input.txt";
-    FILE *fp = fopen(fn, "r");
+    FILE *fp = fopen(fn, "rt");
 
     HashT words = HashTCreate();
     unsigned int curLine = 1;
@@ -99,7 +99,8 @@ int main(int argc, char *argv[])
 char *getWord(FILE *fp, unsigned int *curLine)
 {
     char buf[100];
-    unsigned int ch, i = 0;
+    unsigned i = 0;
+    int ch;
 
     while (EOF != (ch = fgetc(fp)) && !isalpha(ch))
         if (ch == '\n')
@@ -111,9 +112,11 @@ char *getWord(FILE *fp, unsigned int *curLine)
     {
         buf[i++] = tolower(ch);
     } while (EOF != (ch = fgetc(fp)) &&
-             (isalpha(ch) || ch == '\'' || ch == '-'));
+             (isalpha(ch) || ch == '\'' || (ch == '-' && buf[i - 1] != '-')));
 
-    buf[i] = '\0';
+    (buf[i - 1] == '-') ? (buf[i - 1] = '\0') : (buf[i] = '\0');
+
+    ungetc(ch, fp);
 
     return strdup(buf);
 }

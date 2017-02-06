@@ -4,8 +4,8 @@
 
 For example, taking the following text as input, in a file named "input.txt" in the current directory:
 
-```This is
-some kind OF text it
+```This is  
+some kind OF text it  
 Is an example of text```
 
 Supplied as an argument to an executable named "concordance" in the current directory:
