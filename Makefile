@@ -6,10 +6,10 @@ CFLAGS = -c -Wall
 all: concordance
 
 cplus: concordance.cpp
-	$(CCP) -o concordance concordance.cpp
+	$(CCP) -O3 -o concordance concordance.cpp
 
 concordance: concordance.o hashT.o
-	$(CC) -o concordance concordance.o hashT.o
+	$(CC) -O3 -o concordance concordance.o hashT.o
 
 concordance.o: concordance.c $(HEADERS)
 	$(CC) $(CFLAGS) concordance.c

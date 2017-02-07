@@ -27,7 +27,7 @@ void sortArray(tuple **array, const unsigned int size);
 
 int main(int argc, char *argv[])
 {
-    //opterr = 0;
+    opterr = 0;
     /* 0 - only locations of words, 1 - only numbers of words, 2 - locations and numbers of words */
     int c;
     unsigned mode = 0;
@@ -114,7 +114,7 @@ char *getWord(FILE *fp, unsigned int *curLine)
     } while (EOF != (ch = fgetc(fp)) &&
              (isalpha(ch) || ch == '\'' || (ch == '-' && buf[i - 1] != '-')));
 
-    (buf[i - 1] == '-') ? (buf[i - 1] = '\0') : (buf[i] = '\0');
+    (buf[i - 1] == '-' || buf[i - 1] == '\'') ? (buf[i - 1] = '\0') : (buf[i] = '\0');
 
     ungetc(ch, fp);
 
