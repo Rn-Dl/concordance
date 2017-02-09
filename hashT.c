@@ -9,7 +9,6 @@
 struct element
 {
     char *key;
-    unsigned int value;
     Array locs;
     struct element *next;
 };
@@ -117,7 +116,7 @@ static unsigned long hash_function(const char *s)
 }
 
 /* increase hash table in GROWTH_FACTOR times */
-static void grow(HashT hT, const unsigned mode)
+static void grow(HashT hT)
 {
     HashT d2;              //new hashTable
     struct hashTable swap; //temporary structure
@@ -130,10 +129,7 @@ static void grow(HashT hT, const unsigned mode)
     {
         for (e = hT->table[i]; e != 0; e = e->next)
         {
-            if (mode == 1 || mode == 2)
-                HashTAddData(d2, e->key, e->value, 0, 1);
-            if (mode == 0 || mode == 2)
-                HashTCopyArray(d2, e->key, &e->locs);
+            HashTCopyArray(d2, e->key, &e->locs);
         }
     }
 
@@ -145,7 +141,7 @@ static void grow(HashT hT, const unsigned mode)
 }
 
 /* add a new data associated with a key into an existing hashTable */
-void HashTAddData(HashT hT, const char *key, const unsigned int value, const unsigned int curLoc, const unsigned mode)
+void HashTAddData(HashT hT, const char *key, const unsigned int curLoc)
 {
     struct element *e;
     unsigned long h;
@@ -157,12 +153,8 @@ void HashTAddData(HashT hT, const char *key, const unsigned int value, const uns
     assert(e);
 
     e->key = strdup(key);
-    e->value = (mode == 1 || mode == 2) ? value : 0;
-    if (mode == 0 || mode == 2)
-    {
-        initArray(&e->locs, 5);
-        insertArray(&e->locs, curLoc);
-    }
+    initArray(&e->locs, 5);
+    insertArray(&e->locs, curLoc);
 
     h = hash_function(key) % hT->size;
 
@@ -174,7 +166,7 @@ void HashTAddData(HashT hT, const char *key, const unsigned int value, const uns
     // grow table if there is not enough space
     if (hT->n >= hT->size * MAX_LOAD_FACTOR)
     {
-        grow(hT, mode);
+        grow(hT);
     }
 }
 
@@ -214,7 +206,7 @@ const unsigned int HashTSearch(HashT hT, const char *key)
         if (!strcmp(e->key, key))
         {
             // got it
-            return e->value;
+            return e->locs.used;
         }
     }
 
@@ -222,7 +214,7 @@ const unsigned int HashTSearch(HashT hT, const char *key)
 }
 
 /* increment value and insert new value in dynamic array associated with a key */
-void HashTOperation(HashT hT, const char *key, const unsigned int curLoc, const unsigned mode)
+void HashTOperation(HashT hT, const char *key, const unsigned int curLoc)
 {
     struct element *e;
 
@@ -230,19 +222,15 @@ void HashTOperation(HashT hT, const char *key, const unsigned int curLoc, const 
     {
         if (!strcmp(e->key, key))
         {
-            // increment it
-            if (mode == 1 || mode == 2)
-                e->value++;
-            if (mode == 0 || mode == 2)
-                insertArray(&e->locs, curLoc);
+            insertArray(&e->locs, curLoc);
             return;
         }
     }
-    HashTAddData(hT, key, 1, curLoc, mode);
+    HashTAddData(hT, key, curLoc);
 }
 
 /* convert hash table to array of tuples */
-unsigned int HashTToArray(HashT hT, tuple **array, const unsigned mode)
+unsigned int HashTToArray(HashT hT, tuple **array)
 {
     struct element *e;
     unsigned int counter = 0;
@@ -253,16 +241,9 @@ unsigned int HashTToArray(HashT hT, tuple **array, const unsigned mode)
             for (e = hT->table[i]; e != 0 && counter != hT->n; e = e->next)
             {
                 (*array)[counter].str = strdup(e->key);
-                if (mode == 1 || mode == 2)
-                    (*array)[counter].num = e->value;
-                else
-                    (*array)[counter].num = 0;
-                if (mode == 0 || mode == 2)
-                {
-                    initArray(&(*array)[counter].locs, e->locs.size);
-                    (*array)[counter].locs.used = e->locs.used;
-                    memcpy((*array)[counter].locs.array, e->locs.array, e->locs.size * sizeof *(*array)[counter].locs.array);
-                }
+                initArray(&(*array)[counter].locs, e->locs.size);
+                (*array)[counter].locs.used = e->locs.used;
+                memcpy((*array)[counter].locs.array, e->locs.array, e->locs.size * sizeof *(*array)[counter].locs.array);
                 counter++;
             }
     return counter;

@@ -36,8 +36,10 @@ The program must:
   - Use a time (and space, but time is more important than space) efficient algorithm.
   - Be able to handle arbitrarily large files.
 
+## Implementations
+
 ## Usage
 
-Use `make all` to build tool in C.
-Use `make cplus` to build tool in C++.
+Use `make all` to build tool in C.  
+Use `make cplus` to build tool in C++.  
 And `make clean` to clean.

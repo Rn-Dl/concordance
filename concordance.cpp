@@ -26,14 +26,8 @@ struct conLetters : std::ctype<char>
     }
 };
 
-struct Data
-{
-    unsigned count;
-    std::vector<unsigned> locs;
-};
-
-void printCounter(std::map<std::string, Data> &C);
-void fprintCounter(std::map<std::string, Data> &C);
+void printCounter(std::map<std::string, std::vector<unsigned>> &C);
+void fprintCounter(std::map<std::string, std::vector<unsigned>> &C);
 
 int main(int argc, char **argv)
 {
@@ -65,8 +59,7 @@ int main(int argc, char **argv)
 
     std::string line;
     std::string word;
-    size_t pos = 0;
-    std::unordered_map<std::string, Data> Counter;
+    std::unordered_map<std::string, std::vector<unsigned>> Counter;
 
     std::ifstream ifp(fn, std::ios::in);
     if (ifp.is_open())
@@ -78,27 +71,25 @@ int main(int argc, char **argv)
 
             transform(line.begin(), line.end(), line.begin(), ::tolower);
 
+            size_t pos = 0;
+            while ((pos = line.find("--", pos)) != std::string::npos)
+            {
+                line.replace(pos, 2, " ");
+                pos += 1;
+            }
+
             std::istringstream ss(line);
             ss.imbue(std::locale(std::locale(), new conLetters()));
             while (ss >> word)
             {
-                if (word[0] == '\'' || word[0] == '-')
+                if (std::ispunct(word[0]))
                     word.erase(0, 1);
-                if ((pos = word.find("--")) != std::string::npos)
-                {
-                    if (pos != 0)
-                    {
-                        ++Counter[word.substr(0, pos)].count;
-                        Counter[word.substr(0, pos)].locs.push_back(curLoc);
-                    }
-                    word = word.substr(pos + 2);
-                }
-                if (word[0] == '\'' || word[0] == '-')
-                    word.erase(0, 1);
-                if (word == "\0")
+                if (word.size() == 0)
                     continue;
-                ++Counter[word].count;
-                Counter[word].locs.push_back(curLoc);
+                if (std::ispunct(word[word.size() - 1]))
+                    word.erase(word.size() - 1, 1);
+
+                Counter[word].push_back(curLoc);
             }
         }
         ifp.close();
@@ -109,7 +100,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    std::map<std::string, Data> orderedCounter(Counter.begin(), Counter.end());
+    std::map<std::string, std::vector<unsigned>> orderedCounter(Counter.begin(), Counter.end());
 
     if (fout)
         fprintCounter(orderedCounter);
@@ -124,29 +115,29 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void printCounter(std::map<std::string, Data> &C)
+void printCounter(std::map<std::string, std::vector<unsigned>> &C)
 {
-    for (std::pair<std::string, Data> w : C)
+    for (std::pair<std::string, std::vector<unsigned>> w : C)
     {
         std::cout << w.first << " ";
-        for (int location : w.second.locs)
+        for (unsigned location : w.second)
             std::cout << location << " ";
-        std::cout << "[" << w.second.count << "]"
+        std::cout << "[" << w.second.size() << "]"
                   << "\n";
     }
 }
 
-void fprintCounter(std::map<std::string, Data> &C)
+void fprintCounter(std::map<std::string, std::vector<unsigned>> &C)
 {
     std::ofstream ofp("output.txt", std::ios::out);
     if (ofp.is_open())
     {
-        for (std::pair<std::string, Data> w : C)
+        for (std::pair<std::string, std::vector<unsigned>> w : C)
         {
             ofp << w.first << " ";
-            for (int location : w.second.locs)
+            for (unsigned location : w.second)
                 ofp << location << " ";
-            ofp << "[" << w.second.count << "]"
+            ofp << "[" << w.second.size() << "]"
                 << "\n";
         }
         ofp.close();

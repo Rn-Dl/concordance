@@ -19,7 +19,6 @@ typedef struct
 typedef struct
 {
     char *str;
-    int num;
     Array locs;
 } tuple;
 
@@ -30,7 +29,7 @@ HashT HashTCreate(void);
 void HashTDestroy(HashT);
 
 /* add a new data associated with a key into an existing hashTable */
-void HashTAddData(HashT, const char *key, const unsigned int value, const unsigned int curLoc, const unsigned mode);
+void HashTAddData(HashT, const char *key, const unsigned int curLoc);
 
 /* Copy dynamic array to array associated with a key */
 void HashTCopyArray(HashT, const char *key, const Array *arr);
@@ -40,10 +39,10 @@ void HashTCopyArray(HashT, const char *key, const Array *arr);
 const unsigned int HashTSearch(HashT, const char *key);
 
 /* increment value and insert new value in dynamic array associated with a key */
-void HashTOperation(HashT, const char *key, const unsigned int curLoc, const unsigned mode);
+void HashTOperation(HashT, const char *key, const unsigned int curLoc);
 
 /* convert hash table to array of tuples */
-unsigned int HashTToArray(HashT, tuple **array, const unsigned mode);
+unsigned int HashTToArray(HashT, tuple **array);
 
 /* destroy array of tuples */
 void ArrayDestroy(tuple **array, const unsigned int size);

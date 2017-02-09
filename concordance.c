@@ -72,11 +72,11 @@ int main(int argc, char *argv[])
 
     char *word;
     while ((word = getWord(fp, &curLine)))
-        HashTOperation(words, word, curLine, mode);
+        HashTOperation(words, word, curLine);
     fclose(fp);
 
     tuple *t;
-    const unsigned int n = HashTToArray(words, &t, mode);
+    const unsigned int n = HashTToArray(words, &t);
     sortArray(&t, n);
     if (fout)
         fprintArray(&t, n, mode);
@@ -130,7 +130,7 @@ void printArray(tuple **array, const unsigned int size, const unsigned mode)
             for (unsigned int j = 0; j < (*array)[i].locs.used; j++)
                 printf("%u ", (*array)[i].locs.array[j]);
         if (mode == 1 || mode == 2)
-            printf("[%u]\n", (*array)[i].num);
+            printf("[%zu]\n", (*array)[i].locs.used);
         else
             printf("\n");
     }
@@ -138,7 +138,7 @@ void printArray(tuple **array, const unsigned int size, const unsigned mode)
 
 void fprintArray(tuple **array, const unsigned int size, const unsigned mode)
 {
-    FILE *f = fopen("output.txt", "w");
+    FILE *f = fopen("output.txt", "wt");
     for (unsigned int i = 0; i < size; i++)
     {
         fprintf(f, "%s ", (*array)[i].str);
@@ -146,7 +146,7 @@ void fprintArray(tuple **array, const unsigned int size, const unsigned mode)
             for (unsigned int j = 0; j < (*array)[i].locs.used; j++)
                 fprintf(f, "%u ", (*array)[i].locs.array[j]);
         if (mode == 1 || mode == 2)
-            fprintf(f, "[%u]\n", (*array)[i].num);
+            fprintf(f, "[%zu]\n", (*array)[i].locs.used);
         else
             fprintf(f, "\n");
     }
