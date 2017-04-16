@@ -1,25 +1,50 @@
 #!/usr/bin/python3
-from sys import argv
+import getopt
 import re
 import string
 import time
+from os.path import isfile
+from sys import argv
+
+
+def usage():
+    print("concordance -i <input file> -o <output file>\n")
 
 
 def main():
-    fout = True
-    file = None
+    try:
+        opts, args = getopt.getopt(
+            argv[1:], "i:o:h", ["input", "output", "help"])
+    except getopt.GetoptError as err:
+        print(err)
+        usage()
+        exit(2)
+    fout = None
+    fin = None
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            usage()
+            exit()
+        elif o in ("-o", "--output"):
+            fout = a
+        elif o in ("-i", "--input"):
+            fin = a
+        else:
+            assert False, "unhandled option"
+
+    if not fin:
+        if isfile("input.txt"):
+            fin = "input.txt"
+        else:
+            print("Unable to open input file.")
+            usage()
+            exit(1)
+
+    f = open(fin, 'r')
+    text = f.read().lower()
+    f.close()
+
     Counter = {}
-
-    if(len(argv) > 1):
-        for a in argv[1:]:
-            if a == "-o":
-                fout = False
-            else:
-                file = open(a, 'r')
-
-    text = file.read().lower()
-    file.close()
-
     pattern = re.compile(r'\b([a-z\']+(?:-[a-z\']+)*)\b')
 
     for i, line in enumerate(text.split('\n')):
@@ -30,13 +55,13 @@ def main():
             Counter[word].append(i + 1)
 
     if fout:
-        of = open("output.txt", 'w')
+        f = open(fout, 'w')
         for key in sorted(Counter):
-            of.write(key + " ")
+            f.write(key + " ")
             for loc in Counter[key]:
-                of.write(str(loc) + " ")
-            of.write("[" + str(len(Counter[key])) + "]\n")
-        of.close()
+                f.write(str(loc) + " ")
+            f.write("[" + str(len(Counter[key])) + "]\n")
+        f.close()
     else:
         for key in sorted(Counter):
             print(key, end=" ")

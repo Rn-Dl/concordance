@@ -9,8 +9,8 @@
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
-#include <stdbool.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include "hashT.h"
 
 /* return string (char pointer) from file (file pointer) */
@@ -20,30 +20,37 @@ char *getWord(FILE *fp, unsigned int *curLine);
 void printArray(tuple **array, const unsigned int size, const unsigned mode);
 
 /* output of result to file */
-void fprintArray(tuple **array, const unsigned int size, const unsigned mode);
+void fprintArray(tuple **array, const unsigned int size, const unsigned mode, const char *fout);
 
 /* sort array */
 void sortArray(tuple **array, const unsigned int size);
 
+/* check that input is number */
+unsigned int isnumber(char *input);
+
 int main(int argc, char *argv[])
 {
     opterr = 0;
-    /* 0 - only locations of words, 1 - only numbers of words, 2 - locations and numbers of words */
     int c;
-    unsigned mode = 0;
-    bool fout = true;
+    unsigned mode = 0; /* 0 - only locations of words, 1 - only numbers of words, 2 - locations and numbers of words */
+    char *fout = NULL; /* if NULL than output to screen, else output to file */
 
-    while ((c = getopt(argc, argv, "m:o")) != -1)
+    while ((c = getopt(argc, argv, "m:o:h")) != -1)
         switch (c)
         {
         case 'm':
-            mode = atoi(optarg);
+            if (isnumber(optarg))
+                mode = atoi(optarg);
             break;
         case 'o':
-            fout = false;
+            fout = optarg;
+            break;
+        case 'h':
+            fprintf(stdout, "concordance <input file> -m <mode 0-2> -o <output file>\n");
+            exit(0);
             break;
         case '?':
-            if (optopt == 'm')
+            if (optopt == 'm' || optopt == 'o')
                 fprintf(stderr, "Option -%c requires an argument.\n", optopt);
             else if (isprint(optopt))
                 fprintf(stderr, "Unknown option `-%c'.\n", optopt);
@@ -51,7 +58,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr,
                         "Unknown option character `\\x%x'.\n",
                         optopt);
-            return 1;
+            exit(1);
         default:
             abort();
         }
@@ -59,16 +66,16 @@ int main(int argc, char *argv[])
     clock_t begin = clock();
 
     const char *fn = (optind < argc) ? argv[optind] : "input.txt";
+    struct stat buf;
+    if (stat(fn, &buf) != 0)
+    {
+        fprintf(stderr, "Unable to open file: %s\n", fn);
+        exit(1);
+    }
     FILE *fp = fopen(fn, "rt");
 
     HashT words = HashTCreate();
     unsigned int curLine = 1;
-
-    if (!fp)
-    {
-        fprintf(stderr, "Error: File open failed.\n");
-        return 1;
-    }
 
     char *word;
     while ((word = getWord(fp, &curLine)))
@@ -79,7 +86,7 @@ int main(int argc, char *argv[])
     const unsigned int n = HashTToArray(words, &t);
     sortArray(&t, n);
     if (fout)
-        fprintArray(&t, n, mode);
+        fprintArray(&t, n, mode, fout);
     else
         printArray(&t, n, mode);
 
@@ -136,21 +143,25 @@ void printArray(tuple **array, const unsigned int size, const unsigned mode)
     }
 }
 
-void fprintArray(tuple **array, const unsigned int size, const unsigned mode)
+void fprintArray(tuple **array, const unsigned int size, const unsigned mode, const char *fout)
 {
-    FILE *f = fopen("output.txt", "wt");
+    FILE *fp = fopen(fout, "wt");
+    if (!fp)
+    {
+        fprintf(stderr, "Unable to open file: %s\n", fout);
+    }
     for (unsigned int i = 0; i < size; i++)
     {
-        fprintf(f, "%s ", (*array)[i].str);
+        fprintf(fp, "%s ", (*array)[i].str);
         if (mode == 0 || mode == 2)
             for (unsigned int j = 0; j < (*array)[i].locs.used; j++)
-                fprintf(f, "%u ", (*array)[i].locs.array[j]);
+                fprintf(fp, "%u ", (*array)[i].locs.array[j]);
         if (mode == 1 || mode == 2)
-            fprintf(f, "[%zu]\n", (*array)[i].locs.used);
+            fprintf(fp, "[%zu]\n", (*array)[i].locs.used);
         else
-            fprintf(f, "\n");
+            fprintf(fp, "\n");
     }
-    fclose(f);
+    fclose(fp);
 }
 
 void sortArray(tuple **array, const unsigned int size)
@@ -164,4 +175,16 @@ void sortArray(tuple **array, const unsigned int size)
                 (*array)[j] = (*array)[j + 1];
                 (*array)[j + 1] = temp;
             }
+}
+
+unsigned int isnumber(char *input)
+{
+    size_t length = strlen(input);
+    for (int i=0; i<length; i++)
+        if (!isdigit(input[i]))
+        {
+            fprintf (stderr, "Entered input is not a number\n");
+            exit(1);
+        }
+    return 1;
 }

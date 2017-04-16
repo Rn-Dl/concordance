@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <ctime>
 #include <getopt.h>
+#include <sys/stat.h>
 
 struct conLetters : std::ctype<char>
 {
@@ -26,8 +27,11 @@ struct conLetters : std::ctype<char>
     }
 };
 
+/* output of result to screen */
 void printCounter(std::map<std::string, std::vector<unsigned>> &C);
-void fprintCounter(std::map<std::string, std::vector<unsigned>> &C);
+
+/* output of result to file */
+void fprintCounter(std::map<std::string, std::vector<unsigned>> &C, const char *fout);
 
 int main(int argc, char **argv)
 {
@@ -35,20 +39,26 @@ int main(int argc, char **argv)
 
     opterr = 0;
     int c;
-    bool fout = true;
+    const char *fout = NULL;
 
-    while ((c = getopt(argc, argv, "o")) != -1)
+    while ((c = getopt(argc, argv, "o:h")) != -1)
         switch (c)
         {
         case 'o':
-            fout = false;
+            fout = optarg;
+            break;
+        case 'h':
+            std::cout << "concordance <input file> -o <output file>\n";
+            exit(0);
             break;
         case '?':
-            if (isprint(optopt))
+            if (optopt == 'o')
+                std::cerr << "Option -" << char(optopt) << " requires an argument.\n";
+            else if (isprint(optopt))
                 std::cerr << "Unknown option `-" << optopt << "'.\n";
             else
                 std::cerr << "Unknown option character `\\x" << optopt << "'.\n";
-            return 1;
+            exit(1);
         default:
             abort();
         }
@@ -56,54 +66,52 @@ int main(int argc, char **argv)
     clock_t begin = clock();
 
     const char *fn = (optind < argc) ? argv[optind] : "input.txt";
+    struct stat buf;
+    if (stat(fn, &buf) != 0)
+    {
+        std::cerr << "Unable to open file: " << fn << "\n";
+        exit(1);
+    }
+    std::ifstream ifp(fn, std::ios::in);
 
     std::string line;
     std::string word;
     std::unordered_map<std::string, std::vector<unsigned>> Counter;
 
-    std::ifstream ifp(fn, std::ios::in);
-    if (ifp.is_open())
+    unsigned curLoc = 0;
+    while (getline(ifp, line))
     {
-        unsigned curLoc = 0;
-        while (getline(ifp, line))
+        ++curLoc;
+
+        transform(line.begin(), line.end(), line.begin(), ::tolower);
+
+        size_t pos = 0;
+        while ((pos = line.find("--", pos)) != std::string::npos)
         {
-            ++curLoc;
-
-            transform(line.begin(), line.end(), line.begin(), ::tolower);
-
-            size_t pos = 0;
-            while ((pos = line.find("--", pos)) != std::string::npos)
-            {
-                line.replace(pos, 2, " ");
-                pos += 1;
-            }
-
-            std::istringstream ss(line);
-            ss.imbue(std::locale(std::locale(), new conLetters()));
-            while (ss >> word)
-            {
-                if (std::ispunct(word[0]))
-                    word.erase(0, 1);
-                if (word.size() == 0)
-                    continue;
-                if (std::ispunct(word[word.size() - 1]))
-                    word.erase(word.size() - 1, 1);
-
-                Counter[word].push_back(curLoc);
-            }
+            line.replace(pos, 2, " ");
+            pos += 1;
         }
-        ifp.close();
+
+        std::istringstream ss(line);
+        ss.imbue(std::locale(std::locale(), new conLetters()));
+        while (ss >> word)
+        {
+            if (std::ispunct(word[0]))
+                word.erase(0, 1);
+            if (word.size() == 0)
+                continue;
+            if (std::ispunct(word[word.size() - 1]))
+                word.erase(word.size() - 1, 1);
+
+            Counter[word].push_back(curLoc);
+        }
     }
-    else
-    {
-        std::cerr << "Unable to open file\n";
-        exit(1);
-    }
+    ifp.close();
 
     std::map<std::string, std::vector<unsigned>> orderedCounter(Counter.begin(), Counter.end());
 
     if (fout)
-        fprintCounter(orderedCounter);
+        fprintCounter(orderedCounter, fout);
     else
         printCounter(orderedCounter);
 
@@ -127,9 +135,9 @@ void printCounter(std::map<std::string, std::vector<unsigned>> &C)
     }
 }
 
-void fprintCounter(std::map<std::string, std::vector<unsigned>> &C)
+void fprintCounter(std::map<std::string, std::vector<unsigned>> &C, const char *fout)
 {
-    std::ofstream ofp("output.txt", std::ios::out);
+    std::ofstream ofp(fout, std::ios::out);
     if (ofp.is_open())
     {
         for (std::pair<std::string, std::vector<unsigned>> w : C)
